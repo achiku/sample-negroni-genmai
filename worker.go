@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/naoina/genmai"
@@ -19,9 +20,10 @@ type User struct {
 }
 
 type Note struct {
-	Id    int64  `db:"pk" column:"tbl_id"`
-	Title string `default:""`
-	Body  string `default:""`
+	Id     int64  `db:"pk" column:"tbl_id"`
+	UserId string `default:""`
+	Title  string `default:""`
+	Body   string `default:""`
 }
 
 func initDB() *genmai.DB {
@@ -39,17 +41,12 @@ func initDB() *genmai.DB {
 }
 
 func main() {
-	word := "world"
-	fmt.Println("hello, ", word)
 	db := initDB()
+	db.SetLogOutput(os.Stdout)
 	var results []User
 	sampleUsers := []User{
 		{Name: "achiku", Active: true},
-		{Name: "moqada", Active: true},
-	}
-	deleteTarget := []User{
-		{Name: "achiku"},
-		{Name: "moqada"},
+		{Name: "moqada", Active: false},
 	}
 	if _, err := db.Insert(sampleUsers); err != nil {
 		panic(err)
@@ -57,8 +54,15 @@ func main() {
 	if err := db.Select(&results); err != nil {
 		panic(err)
 	}
-	if _, err := db.Delete(deleteTarget); err != nil {
+	fmt.Printf("%v\n", results)
+	if _, err := db.Delete(&results); err != nil {
 		panic(err)
 	}
-	fmt.Printf("%v\n", results)
+	if err := db.Select(&results, db.Where("active", "=", false)); err != nil {
+		panic(err)
+	}
+	if _, err := db.Delete(&results); err != nil {
+		panic(err)
+	}
+	fmt.Printf("done\n")
 }
